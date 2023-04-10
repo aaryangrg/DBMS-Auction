@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %} Auction {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+{% block sidebar %}
+  {%include 'auction/auction_sidebar.html'%}
+{%endblock sidebar%}
+{% block content %}
+  <div class="content">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card ">
+          <div class="card-header">
+            <h4 class="card-title"> All Items</h4>
+          </div>
+          <div class="card-body">
+            <div style="display: flex; flex-direction: row; justify-content: center; flex-wrap: wrap;">
+            {% for item in items %}
+                <div class="card" style="width: 18rem; margin : 0.5rem;">
+                    <img class="card-img-top" src="http://localhost:8000/media/{{item.image}}" alt="Card image cap">
+                        <div class="card-body">
+                            <h5 class="card-title">{{item.name}}</h5>
+                            <p class="card-text">{{item.description}}</p>
+                            <a href="{% url 'item-details' item.itemid %}" class="btn btn-primary">View</a>
+                        </div>
+                </div>
+            {%endfor%}
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+{% endblock javascripts %}

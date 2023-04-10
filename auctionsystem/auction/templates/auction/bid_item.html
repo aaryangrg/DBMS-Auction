@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %} TEST {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+{% block sidebar %}
+  {%include 'auction/auction_sidebar.html'%}
+{%endblock sidebar%}
+{% block content %}
+  <div class="content">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card ">
+          <div class="card-header">
+            <h4 class="card-title">Place your bid!</h4>
+          </div>
+          <div class="card-body">
+            <div class="card text-center">
+                {% if item.is_sold %}
+                    <h2>ITEM SOLD</h2>
+                {% elif not item.is_live %}
+                    <h2>ITEM NO LONGER BEING AUCTIONED</h2>
+                {% else %}
+                    <div class="card-header"></div>
+                        <div class="card-body">
+                        <h3 class="card-title">{{item.name}}</h5>
+                        <p class = "card-text">Current Minimum Bid : {{item.current_bid}}</p>
+                        <form method="POST">
+                          {% csrf_token %} 
+                            <div class="form-group">
+                                <label for="floatingPassword">Your Bid</label>
+                                <input
+                                    type="number"
+                                    class="form-control"
+                                    name="bid"
+                                    placeholder="Bid Amount"
+                                    min = {{item.current_bid}}
+                                    required
+                                />
+                            </div>
+                            <button
+                                    class="w-100 btn btn-lg btn-secondary"
+                                    type="submit"
+                                    value="bid"
+                                >
+                                    Place Bid
+                              </button>
+                          </form>
+                        </div>
+                    </div>
+                {% endif %}
+                <div>
+                    PREVIOUS BIDS ON THIS ITEM
+                </div>
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Email</th>
+                      <th scope="col">Amount</th>
+                      <th scope="col">Date & Time</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {%for bid in bids %}
+                    <tr>
+                      <td>{{bid.email}}</td>
+                      <td>{{bid.amount}}</td>
+                      <td>{{bid.placed_at}}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+{% endblock javascripts %}

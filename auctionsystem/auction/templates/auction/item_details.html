@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %} TEST {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+{% block sidebar %}
+  {%include 'auction/auction_sidebar.html'%}
+{%endblock sidebar%}
+{% block content %}
+  <div class="content">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card ">
+          <div class="card-header">
+            <h4 class="card-title"></h4>
+          </div>
+          <div class="card-body">
+            <div class="card text-center">
+                <div class="card-header">
+                    Item Details
+                </div>
+                <div class="card-body">
+                  <h3 class="card-title">{{item.name}}</h5>
+                  <img src = "http://localhost:8000/media/{{item.image}}" alt = "Unable to Load">
+                  <p class = "card-text">{{item.description}}</p>
+                  <p class = "card-text">Minimum Bid : {{item.current_bid}}</p>
+                  
+                </div>
+                <div class="card-footer text-muted">
+                    {% if item.is_sold %}
+                        <h2>SOLD</h2>
+                    {% elif not item.is_live %}
+                        <h2>ITEM NO LONGER BEING AUCTIONED</h2>
+                    {% else %}
+                        <a href="{% url 'bid-on-item' item.itemid %}" class="btn btn-primary">Place Bid</a>
+                    {% endif %}
+                </div>
+              </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+{% endblock javascripts %}

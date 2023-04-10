@@ -1,0 +1,17 @@
+.vscode
+*.pyc
+*~
+/venv
+__pycache__
+backend-media/
+backend-static/
+backend-static-deploy/
+db.sqlite3
+venvmysqlserver.sh
+*/migrations
+*/migrations/*
+keyconfig.py
+*/config
+venvmysqlserver.sh
+credentials.json
+.DS_store

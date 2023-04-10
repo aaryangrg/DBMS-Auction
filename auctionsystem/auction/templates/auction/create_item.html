@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %} Create {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+{% block sidebar %}
+  {%include 'auction/auction_sidebar.html'%}
+{%endblock sidebar%}
+{% block content %}
+<div class="content">
+  <div class="row">
+    <div class="col-md-12">
+      <div class="card">
+        <div class="card-header">
+          <h4 class="card-title">Add Item to Auction</h4>
+        </div>
+        <div class="card-body">
+          <div class="card text-center">
+            <div class="card-header"></div>
+            <div class="card-body">
+              <p class="card-text">Fill Item Details</p>
+              <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="form-group">
+                  <label for="floatingPassword">Item Name</label> <input type="text" class="form-control" name="name" placeholder="Item Name" required>
+                </div>
+                <div class="form-group">
+                  <label for="floatingPassword">Description</label> <input type="text" class="form-control" name="description" placeholder="Description" required>
+                </div>
+                <div class="form-group">
+                  <label for="floatingPassword">Item Reserve Price</label> <input type="number" class="form-control" name="reserve_price" placeholder="Reserve Price" min=1 required>
+                </div>
+                <div class="form-group">
+                  <label for="floatingPassword">Minimum Bid</label> <input type="number" class="form-control" name="minimum_bid" placeholder="Minimum Bid" min=1 required>
+                </div>
+                <div class="form-group">
+                  <label for="floatingPassword">Minimum Bid Increment</label> <input type="number" class="form-control" name="bid_increment" placeholder="Bid Increment" min=1 required>
+                </div>
+                <div class="form-group">
+                  <label for="floatingPassword">End Time</label> <input type="datetime-local" class="form-control" name="end_time" placeholder="End Time" min ={{now}} required>
+                </div>
+                <div class="form-group">
+                  <label for="floatingPassword">Category</label>
+                  <select name="category">
+                    {%for category in categories%}
+                    <option value="{{category.static_id}}">
+                      {{category.name}}
+                    </option>
+                    {%endfor%}
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="floatingPassword">Image</label>
+                  <input type="file" class="form-control" name="upload" accept="image/*" required>
+                </div>
+                <button class="w-100 btn btn-lg btn-secondary" type="submit" value="create">Create Item</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+{% endblock javascripts %}
+

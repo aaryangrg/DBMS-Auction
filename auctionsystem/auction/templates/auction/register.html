@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{%load static%}
+{% block title %} Register {% endblock %}
+{% block content %}
+  <div class="content" style="padding-left: 30px">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card ">
+          <div class="card-header">
+            <h4 class="card-title"> Register </h4>
+          </div>
+          <div class="card-body">
+            {% if messages %} {% for message in messages %}
+              <div class="w-100 alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %} {% endif %} {% if form.errors %}
+              <p>Username or Password not correct</p>
+            {% endif %}
+            <form method="POST">
+              {% csrf_token %}
+              <div class="form-group">
+                <label for="floatingInput">Email</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  name="email"
+                  placeholder="Email"
+                  required
+                  autofocus
+                />
+              </div>
+              <div class="form-group">
+                <label for="floatingPassword">Password</label>
+                <input
+                  type="password"
+                  class="form-control"
+                  name="password"
+                  placeholder="Password"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="floatingPassword">Age</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  name="age"
+                  placeholder="Age"
+                  min = 1
+                  max = 100
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="floatingInput">First Name</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  name="first_name"
+                  placeholder="First Name"
+                  required
+                  autofocus
+                />
+              </div>
+              <div class="form-group">
+                <label for="floatingInput">Last Name</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  name="last_name"
+                  placeholder="Last Name"
+                  required
+                  autofocus
+                />
+              </div>
+              <div class="checkbox mb-3"></div>
+              <button
+                class="w-100 btn btn-lg btn-primary"
+                type="submit"
+                value="login"
+              >
+                Register Me!
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}

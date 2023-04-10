@@ -1,0 +1,14 @@
+{% with url_name=request.resolver_match.url_name %}
+    <li class="{% if url == url_name %} active {% endif %} ">
+	<a href="{% url url %}">
+            <i class="tim-icons
+		      {% if icon %}
+		      {{icon}}
+		      {% else %}
+		      icon-chart-pie-36
+		      {% endif %}">
+	    </i>
+            <p>{{title}}</p>
+	</a>
+    </li>
+{% endwith %}

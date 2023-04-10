@@ -1,0 +1,31 @@
+{% load static %}
+<div class="sidebar">
+    <!--
+      change the color of the sidebar using: data-color="blue | green | orange | red"
+    -->
+    <div class="sidebar-wrapper">
+        <div>
+            <div class="logo">
+                <a href="javascript:void(0)" class="simple-text logo-normal">
+                PCR
+                </a>
+            </div>
+            <div>
+                <ul class="nav">
+                    {% include 'sidebar_item.html' with title='Auction' url='all-items' icon='icon-bank' %}
+                    {%if is_admin%}
+                        {% include 'sidebar_item.html' with title='Create Item' url='create-item' %}
+                    {%else%}
+                        {% include 'sidebar_item.html' with title='Profile' url='user-profile' %}
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+        <div>
+            <label class="switch theme-switch">
+                <input type="checkbox" class="bsc" checked="">
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+</div>

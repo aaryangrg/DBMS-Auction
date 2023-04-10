@@ -1,8 +1,4 @@
-from atexit import register
-from cgi import print_environ_usage
-from multiprocessing import current_process
-import time
-from unicodedata import category
+from sre_constants import GROUPREF_EXISTS
 from django.shortcuts import render,redirect
 from django.contrib.auth import authenticate,login,logout
 from django.utils import timezone
@@ -14,7 +10,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from rest_framework.renderers import TemplateHTMLRenderer
 from django.db import connection, transaction
-import uuid
+from datetime import datetime
+from django.utils.timezone import make_aware
 
 # Create your views here.
 #TO-DO : Sort by created at
@@ -25,14 +22,13 @@ class AllAuctionItems(LoginRequiredMixin, APIView):
     def get(self,request):
         all_auctionable_items = []
         with connection.cursor() as cursor:
-            cursor.execute(f"SELECT i.name as name, i.description as description, i.static_id as itemid, images.image as image from item i INNER JOIN itemimages images ON images.item_id = i.static_id WHERE i.is_live = true AND i.is_sold = false AND i.end_time > '{timezone.now()}'")
+            cursor.execute(f"SELECT i.name as name, i.description as description, i.static_id as itemid, images.image as image from item i INNER JOIN itemimages images ON images.item_id = i.static_id WHERE i.is_live = true AND i.is_sold = false AND i.end_time > '{timezone.now()}' ORDER BY i.start_time desc")
             all_auctionable_items = dictfetchall(cursor)
         return render(request,self.template_name,context = {
             "items" : all_auctionable_items,
             "is_admin" : checkAdmin(request)
         })
 
-#TO-DO : Change display layout : show last bid time, 
 #Pass new context of bid_time and time.now() to the template.
 class ItemDetailView(LoginRequiredMixin,APIView):
     renderer_classes = [TemplateHTMLRenderer]
@@ -41,7 +37,7 @@ class ItemDetailView(LoginRequiredMixin,APIView):
     def get(self,request, pk):
         required_item =  None
         with connection.cursor() as cursor:
-            cursor.execute(f"SELECT i.static_id as itemid, i.name as name, i.end_time as end_time, i.is_sold as is_sold, i.is_live as is_live, i.current_bid as current_bid, images.image as image from item i INNER JOIN itemimages images ON i.static_id = images.item_id WHERE i.is_live = true AND i.is_sold = false AND i.static_id = '{pk}'")
+            cursor.execute(f"SELECT i.static_id as itemid, i.name as name, i.end_time as end_time, i.is_sold as is_sold, i.is_live as is_live, i.current_bid as current_bid, images.image as image, c.name as category_name from item i INNER JOIN itemimages images ON i.static_id = images.item_id INNER JOIN category c ON c.static_id = i.category_id WHERE i.static_id = '{pk}'")
             required_item = dictfetchall(cursor)
         if(required_item):
             return render(request,self.template_name,context = {
@@ -57,7 +53,6 @@ class BidOnItemView(RequestFromUserMixin,APIView):
     renderer_classes = [TemplateHTMLRenderer]
     template_name = "auction/bid_item.html"
 
-    #Show a table of the previous bids on this page
     def get(self,request, pk):
         required_item = None
         all_item_bids = None
@@ -100,19 +95,61 @@ class BidOnItemView(RequestFromUserMixin,APIView):
         if profile_static_id:
             messages.error(request,"This User does not exist")
             return redirect('bid-on-item', pk = item_static_id)
-        new_bid = Bid.objects.create(item = Item.objects.filter(static_id = item_static_id).first(), amount = amount_bid, placed_by = UserProfile.objects.filter(static_id = profile_static_id))
-        new_bid.save()
+        item_auction_end_time = datetime.strptime(item[0]["end_time"], "%Y-%m-%dT%H:%M")
+        if make_aware(item_auction_end_time) >  timezone.now():
+            new_bid = Bid.objects.create(item = Item.objects.filter(static_id = item_static_id).first(), amount = amount_bid, placed_by = UserProfile.objects.filter(static_id = profile_static_id))
+            new_bid.save()
+            new_bid_amount = new_bid.amount + item[0]["bid_increment"]
+            with connection.cusor() as cursor:
+                cursor.execute(f"UPDATE item set current_bid = {new_bid_amount} where static_id = '{item_static_id}'")
+        else:
+            messages.error(request,"Auction time for this item is over! Admins will soon remove this item")
+            return redirect('bid-on-item', pk = item_static_id)
         # cursor.execute(f"INSERT into Bid(amount, item_id, placed_by_id) VALUES({int(amount_bid)}, '{item_static_id}', '{profile_static_id}')")
         return redirect('bid-on-item', pk = item_static_id)
 
 
-#Show user details --> for admin just display that the person is an admin 
 class UserProfileView(RequestFromUserMixin, APIView):
     renderer_classes = [TemplateHTMLRenderer]
-    template_name = "auction/login.html"
+    template_name = "auction/profile.html"
 
     def get(self, request):
-        pass
+        profile = UserProfile.objects.filter(email = request.user.email).first()
+        all_bids = []
+        with connection.cursor() as cursor:
+            if profile:
+                profile_id = profile.static_id
+                print(profile_id)
+                cursor.execute(f"SELECT * FROM Bid WHERE placed_by_id = '{profile_id}' order by placed_at desc")
+            all_bids = dictfetchall(cursor)
+            print(all_bids)
+        all_bids = get_bid_status(all_bids)
+        return render(request,self.template_name,context = {
+            "profile" : profile,
+            "user" : request.user,
+            "bids" : all_bids,
+        })
+
+
+def get_bid_status(bids):
+    cursor = connection.cursor()
+    for bid in bids:
+        bid_item_id = bid["item_id"]
+        print("bid_item_id", bid_item_id)
+        cursor.execute(f"SELECT static_id FROM Bid WHERE item_id = '{bid_item_id}' order by placed_at desc LIMIT 1")
+        latest_bid_id = dictfetchall(cursor)[0]["static_id"]
+        cursor.execute(f"SELECT is_sold, name FROM item WHERE static_id = '{bid_item_id}'")
+        item = dictfetchall(cursor)[0]
+        is_sold = item["is_sold"]
+        if bid["static_id"] ==  latest_bid_id and is_sold :
+            bid["status"] = "WON"
+        elif bid["static_id"] ==  latest_bid_id and is_sold == False :
+            bid["status"] = "CURRENT HIGHEST"
+        else:
+            bid["status"] = "LOST"
+        bid["item_name"] = item["name"]
+    return bids
+
 
 
 """REGISTRATION VIEWS"""
@@ -183,12 +220,52 @@ def logout_view(request):
 
 
 #View from which an admin can edit an added item (any admin can change any item --> not limited to the one who created it)
-class EditItem(RequestFromAdminMixin, APIView):
+class AdminEditItem(RequestFromAdminMixin, APIView):
     renderer_classes = [TemplateHTMLRenderer]
-    template_name = "auction/login.html"
+    template_name = "auction/edit_item.html"
 
-    def get(self, request):
-        pass
+    def get(self, request, pk):
+        required_item =  None
+        with connection.cursor() as cursor:
+            cursor.execute(f"SELECT i.static_id as static_id, i.name as name, i.end_time as end_time, i.is_sold as is_sold, i.is_live as is_live, i.current_bid as current_bid, i.reserve_price as reserve_price, images.image as image from item i INNER JOIN itemimages images ON i.static_id = images.item_id WHERE i.static_id = '{pk}'")
+            required_item = dictfetchall(cursor)
+        if(required_item):
+            return render(request,self.template_name,context = {
+                "item" : required_item[0],
+                "is_admin" : checkAdmin(request)
+            })
+        else:
+            messages.error(request,"Item could not be found")
+            redirect('all-items', pk = pk)
+    
+    def post(self,request, *args, **kwargs):
+        try:
+            is_sold = request.POST.get("is_sold")
+            is_live = request.POST.get("is_live")
+            pk = kwargs["pk"]
+            with connection.cursor() as cursor:
+                if(is_sold == "on"):
+                    cursor.execute(f"SELECT * from item where static_id = '{pk}'")
+                    item = dictfetchall(cursor)
+                    if item :
+                        item = item[0]
+                        if item["current_bid"] > item["reserve_price"] - item["bid_increment"] and item["current_bid"] != item["minimum_bid"]:
+                            cursor.execute(f"Update item set is_sold = true where static_id = {pk}")
+                            print("Updated item status")
+                        else:
+                            messages.error(request,"Item cannot be marked sold. Reserve price not crossed")
+                            return redirect("edit-item",pk = pk)
+                print("Hit last point")
+                live_value = True if is_live == "On" else False
+                cursor.execute(f"Update item set is_live = {live_value} where static_id = '{pk}'")
+            messages.success(request, "Updated Item")
+            return redirect("edit-item", pk = pk)
+
+        except Exception as e:
+            messages.error(request,"Request invalid")
+            return redirect("all-items")
+
+
 
 #TO-DO : Re-direct to error page or profile page with required error messages
 #TO-DO : Add input validation for final date.
@@ -227,6 +304,11 @@ class CreateItemView(RequestFromAdminMixin, APIView):
         if not (item_name or item_reserve_price or item_minimum_bid or item_bid_increment or item_end_time or item_category_static_id) :
             messages.error(request, "Insufficient Fields")
             return redirect('create-item')
+        print("END DATE TIME : ", item_end_time)
+        item_end_time = datetime.strptime(item_end_time, "%Y-%m-%dT%H:%M")
+        if make_aware(item_end_time) < timezone.now():
+            messages.error(request, "Invalid End Time")
+            return redirect('create-item')
         admin_static_id = admin[0]["static_id"]
         #Add atomic transactions here
         with transaction.atomic():
@@ -239,7 +321,6 @@ class CreateItemView(RequestFromAdminMixin, APIView):
         # with connection.cursor() as cursor:
         #     cursor.execute(f"INSERT into item(static_id, name, description, reserve_price, minimum_bid, bid_increment, end_time, category_id, added_by_id, is_sold, is_live, start_time, current_bid) VALUES('{new_item_id}','{item_name}','{item_desc}',{item_reserve_price},{item_minimum_bid},{item_bid_increment},'{item_end_time}','{item_category_static_id}','{admin_static_id}', {False}, {True}, '{timezone.now()}',{item_minimum_bid})")
         #     transaction.commit()
-        pass
 
 def dictfetchall(cursor): 
     "Returns all rows from a cursor as a dict" 

@@ -14,7 +14,12 @@
           <div class="card-header">
             <h4 class="card-title"></h4>
           </div>
-          {% if messages %}
+          <div class="card-body">
+            <div class="card text-center">
+                <div class="card-header">
+                    Item Details
+                </div>
+                {% if messages %}
                 <ul class="messages">
                     {% for message in messages %}
                         {%if message.tags == "success"%}
@@ -28,32 +33,33 @@
                         {%endif%}
                     {% endfor %}
                 </ul>
-          {% endif %}
-          <div class="card-body">
-            <div class="card text-center">
-                <div class="card-header">
-                    Item Details
-                </div>
+                {% endif %}
                 <div class="card-body">
                   <h3 class="card-title">{{item.name}}</h5>
                   <img src = "http://localhost:8000/media/{{item.image}}" alt = "Unable to Load">
                   <p class = "card-text">{{item.description}}</p>
-                  <p class = "card-text">Category : {{item.category_name}}</p>
-                  <p class = "card-text">Current price to Bid : {{item.current_bid}}</p>
-                  <p class = "card-text">Auction ends on : {{item.end_time}}</p>
-                  
+                  <p class = "card-text">Current Bid : {{item.current_bid}}</p>
+                  <p class = "card-text">Reserve Price : {{item.reserve_price}}</p>
+                  <p class = "card-text">Auction End :  {{item.end_time}}</p>
                 </div>
                 <div class="card-footer text-muted">
                     {% if item.is_sold %}
-                        <h2>SOLD</h2>
+                        <h2>MARKED AS SOLD</h2>
                     {% elif not item.is_live %}
-                        <h2>ITEM NO LONGER BEING AUCTIONED</h2>
+                        <h2>ITEM REMOVED</h2>
                     {% else %}
-                        {%if is_admin%}
-                          <a href="{% url 'edit-item' item.itemid %}" class="btn btn-primary">Update Item</a>
-                        {%else%}
-                          <a href="{% url 'bid-on-item' item.itemid %}" class="btn btn-primary">Place Bid</a>
-                        {%endif%}
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="form-group">
+                          <label for="floatingPassword">Mark as Sold</label> <input type="checkbox" class="form-control" name="is_sold">
+                          {%if item.is_live %}
+                            <label for="floatingPassword">Live</label> <input type="checkbox" class="form-control" name="is_live" checked>
+                          {%else%}
+                            <label for="floatingPassword"></label>Live<input type="checkbox" class="form-control" name="is_live" checked>
+                          {%endif%}
+                        </div>
+                        <button class="w-100 btn btn-lg btn-primary" type="submit" value="create">Update</button>
+                    </form>
                     {% endif %}
                 </div>
               </div>

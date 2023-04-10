@@ -27,60 +27,37 @@
                 </ul>
           {% endif %}
           <div class="card-header">
-            <h4 class="card-title">Place your bid!</h4>
+            <h4 class="card-title">Your Profile</h4>
           </div>
           <div class="card-body">
             <div class="card text-center">
-                {% if item.is_sold %}
-                    <h2>ITEM SOLD</h2>
-                {% elif not item.is_live %}
-                    <h2>ITEM NO LONGER BEING AUCTIONED</h2>
-                {% else %}
                     <div class="card-header"></div>
                         <div class="card-body">
-                        <h3 class="card-title">{{item.name}}</h5>
-                        <p class = "card-text">Current Minimum Bid : {{item.current_bid}}</p>
-                        <form method="POST">
-                          {% csrf_token %} 
-                            <div class="form-group">
-                                <label for="floatingPassword">Your Bid</label>
-                                <input
-                                    type="number"
-                                    class="form-control"
-                                    name="bid"
-                                    placeholder="Bid Amount"
-                                    min = {{item.current_bid}}
-                                    required
-                                />
-                            </div>
-                            <button
-                                    class="w-100 btn btn-lg btn-secondary"
-                                    type="submit"
-                                    value="bid"
-                                >
-                                    Place Bid
-                              </button>
-                          </form>
+                        <h2 class="card-title">{{user.first_name}} {{user.last_name}}</h5>
+                        <h3 class="card-title">{{profile.email}}</h3>
+                        <h3 class="card-title">Age : {{profile.age}}</h3>
+                        <p class = "card-text">Joined on : {{profile.registered_date}}</p>
                         </div>
                     </div>
-                {% endif %}
                 <div>
-                    PREVIOUS BIDS ON THIS ITEM
+                    YOUR BIDS
                 </div>
                 <table class="table">
                   <thead>
                     <tr>
-                      <th scope="col">Email</th>
-                      <th scope="col">Amount</th>
-                      <th scope="col">Date & Time</th>
+                      <th scope="col">Item Name</th>
+                      <th scope="col">Bid Amount</th>
+                      <th scope="col">Placed at</th>
+                      <th scope="col">Status</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {%for bid in bids %}
+                    {% for bid in bids %}
                     <tr>
-                      <td>{{bid.email}}</td>
+                      <td>{{bid.item_name}}</td>
                       <td>{{bid.amount}}</td>
                       <td>{{bid.placed_at}}</td>
+                      <td>{{bid.status}}</td>
                     </tr>
                     {% endfor %}
                   </tbody>

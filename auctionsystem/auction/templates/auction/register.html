@@ -10,9 +10,22 @@
             <h4 class="card-title"> Register </h4>
           </div>
           <div class="card-body">
-            {% if messages %} {% for message in messages %}
-              <div class="w-100 alert alert-{{ message.tags }}">{{ message }}</div>
-            {% endfor %} {% endif %} {% if form.errors %}
+            {% if messages %}
+                <ul class="messages">
+                    {% for message in messages %}
+                        {%if message.tags == "success"%}
+                            <div class="alert alert-success" role="alert">
+                                {{message}}
+                            </div>
+                        {%else%}
+                            <div class="alert alert-danger" role="alert">
+                                {{message}}
+                            </div>
+                        {%endif%}
+                    {% endfor %}
+                </ul>
+            {% endif %}
+            {% if form.errors %}
               <p>Username or Password not correct</p>
             {% endif %}
             <form method="POST">

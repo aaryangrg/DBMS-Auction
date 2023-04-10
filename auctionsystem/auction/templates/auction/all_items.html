@@ -9,6 +9,21 @@
 {% block content %}
   <div class="content">
     <div class="row">
+      {% if messages %}
+                <ul class="messages">
+                    {% for message in messages %}
+                        {%if message.tags == "success"%}
+                            <div class="alert alert-success" role="alert">
+                                {{message}}
+                            </div>
+                        {%else%}
+                            <div class="alert alert-danger" role="alert">
+                                {{message}}
+                            </div>
+                        {%endif%}
+                    {% endfor %}
+                </ul>
+                {% endif %}
       <div class="col-md-12">
         <div class="card ">
           <div class="card-header">

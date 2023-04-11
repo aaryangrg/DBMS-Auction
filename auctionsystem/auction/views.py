@@ -65,7 +65,6 @@ class BidOnItemView(RequestFromUserMixin,APIView):
             "bids" : all_item_bids,
         })
     
-    #Add messages section --> show bid success message and reload the bid page.
     def post(self, request, *args, **kwargs):
         item_static_id = kwargs["pk"]
         amount_bid = request.POST.get("bid")

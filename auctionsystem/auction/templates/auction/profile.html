@@ -36,7 +36,6 @@
                         <h2 class="card-title">{{user.first_name}} {{user.last_name}}</h5>
                         <h3 class="card-title">{{profile.email}}</h3>
                         <h3 class="card-title">Age : {{profile.age}}</h3>
-                        <p class = "card-text">Joined on : {{profile.registered_date}}</p>
                         </div>
                     </div>
                 <div>
@@ -57,7 +56,13 @@
                       <td>{{bid.item_name}}</td>
                       <td>{{bid.amount}}</td>
                       <td>{{bid.placed_at}}</td>
-                      <td>{{bid.status}}</td>
+                      {%if bid.status == "WON"%}
+                        <td style = "font-weight: bold; color : green">{{bid.status}}</td>
+                      {%elif bid.status == "CURRENT HIGHEST"%}
+                        <td style = "font-weight: bold; color : yellow">{{bid.status}}</td>
+                      {%else%}
+                        <td style = "font-weight: bold; color :red">{{bid.status}}</td>
+                      {%endif%}
                     </tr>
                     {% endfor %}
                   </tbody>

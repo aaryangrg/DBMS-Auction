@@ -13,8 +13,6 @@ from django.db import connection, transaction
 from datetime import datetime
 from django.utils.timezone import make_aware
 
-# Create your views here.
-#TO-DO : Sort by created at
 class AllAuctionItems(LoginRequiredMixin, APIView):
     renderer_classes = [TemplateHTMLRenderer]
     template_name = "auction/all_items.html"
@@ -81,27 +79,25 @@ class BidOnItemView(RequestFromUserMixin,APIView):
             if not item:
                 messages.error(request, "Item Static ID invalid")
                 return redirect('bid-on-item', pk = item_static_id)
-            cursor.execute(f"SELECT * FROM userprofile where email = '{request.user.email}'")
+            cursor.execute(f"SELECT * FROM UserProfile where email = '{request.user.email}'")
             profile = dictfetchall(cursor)
-            if not profile :
-                messages.error(request, "Profile not found or invalid")
-                return redirect('bid-on-item', pk = item_static_id)
             profile_static_id = profile[0]["static_id"]
-            cursor.execute(f"SELECT * FROM bid where item_id = '{item_static_id}' AND amount = {amount_bid}")
+            cursor.execute(f"SELECT * FROM Bid where item_id = '{item_static_id}' AND amount = {amount_bid}")
             previous_bid_with_amount = dictfetchall(cursor)
         if previous_bid_with_amount:
             messages.error(request,"This amount has already been bid before")
             return redirect('bid-on-item', pk = item_static_id)
-        if profile_static_id:
+        if not profile_static_id:
             messages.error(request,"This User does not exist")
             return redirect('bid-on-item', pk = item_static_id)
-        item_auction_end_time = datetime.strptime(item[0]["end_time"], "%Y-%m-%dT%H:%M")
-        if make_aware(item_auction_end_time) >  timezone.now():
-            new_bid = Bid.objects.create(item = Item.objects.filter(static_id = item_static_id).first(), amount = amount_bid, placed_by = UserProfile.objects.filter(static_id = profile_static_id))
+        if make_aware(item[0]["end_time"]) >  timezone.now():
+            new_bid = Bid.objects.create(item = Item.objects.filter(static_id = item_static_id).first(), amount = int(amount_bid), placed_by = UserProfile.objects.filter(static_id = profile_static_id).first())
             new_bid.save()
-            new_bid_amount = new_bid.amount + item[0]["bid_increment"]
-            with connection.cusor() as cursor:
+            new_bid_amount = new_bid.amount + int(item[0]["bid_increment"])
+            with connection.cursor() as cursor:
                 cursor.execute(f"UPDATE item set current_bid = {new_bid_amount} where static_id = '{item_static_id}'")
+            messages.success(request,"Bid successful!")
+            return redirect('bid-on-item', pk = item_static_id)
         else:
             messages.error(request,"Auction time for this item is over! Admins will soon remove this item")
             return redirect('bid-on-item', pk = item_static_id)
@@ -118,11 +114,10 @@ class UserProfileView(RequestFromUserMixin, APIView):
         all_bids = []
         with connection.cursor() as cursor:
             if profile:
-                profile_id = profile.static_id
-                print(profile_id)
+                cursor.execute(f"SELECT static_id from UserProfile where email = '{request.user.email}'")
+                profile_id = dictfetchall(cursor)[0]["static_id"]
                 cursor.execute(f"SELECT * FROM Bid WHERE placed_by_id = '{profile_id}' order by placed_at desc")
             all_bids = dictfetchall(cursor)
-            print(all_bids)
         all_bids = get_bid_status(all_bids)
         return render(request,self.template_name,context = {
             "profile" : profile,
@@ -218,8 +213,6 @@ def logout_view(request):
     logout(request)
     return redirect('login')
 
-
-#View from which an admin can edit an added item (any admin can change any item --> not limited to the one who created it)
 class AdminEditItem(RequestFromAdminMixin, APIView):
     renderer_classes = [TemplateHTMLRenderer]
     template_name = "auction/edit_item.html"
@@ -265,10 +258,6 @@ class AdminEditItem(RequestFromAdminMixin, APIView):
             messages.error(request,"Request invalid")
             return redirect("all-items")
 
-
-
-#TO-DO : Re-direct to error page or profile page with required error messages
-#TO-DO : Add input validation for final date.
 class CreateItemView(RequestFromAdminMixin, APIView):
     renderer_classes = [TemplateHTMLRenderer]
     template_name = "auction/create_item.html"

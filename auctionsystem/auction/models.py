@@ -22,6 +22,9 @@ class Item(models.Model):
 
     class Meta:
         db_table = "item"
+    
+    def __str__(self):
+        return self.name
 
 
 class Category(models.Model):
@@ -30,6 +33,9 @@ class Category(models.Model):
 
     class Meta:
         db_table = "category"
+
+    def __str__(self):
+        return self.name
 
 
 class UserProfile(models.Model):
@@ -41,6 +47,9 @@ class UserProfile(models.Model):
 
     class Meta:
         db_table = "UserProfile"
+    
+    def __str__(self):
+        return self.email
 
 class Admin(models.Model):
     static_id = models.UUIDField( max_length=48, unique=True, default=uuid.uuid4, editable=False, primary_key=True)
@@ -51,6 +60,9 @@ class Admin(models.Model):
     class Meta:
         db_table = "Admin"
 
+    def __str__(self):
+        return self.email
+    
 class Bid(models.Model):
     static_id = models.UUIDField( max_length=48, unique=True, default=uuid.uuid4, editable=False,  primary_key=True)
     amount = models.IntegerField()
@@ -60,6 +72,9 @@ class Bid(models.Model):
 
     class Meta:
         db_table = "Bid"
+    
+    def __str__(self):
+        return self.item.name + "-" + self.placed_by.email
 
 class ItemImage(models.Model):
     item = models.ForeignKey("Item", on_delete=models.CASCADE, related_name="item_images")
@@ -67,3 +82,6 @@ class ItemImage(models.Model):
 
     class Meta :
         db_table = "itemimages"
+    
+    def __str__(self):
+        return self.item.name
